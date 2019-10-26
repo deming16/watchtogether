@@ -13,152 +13,62 @@
   <!-- initialize the SDK after all desired features are loaded -->
   <script defer src="/__/firebase/init.js"></script>
 
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Compiled and minified CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-
   <!-- Compiled and minified JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
+  <style>
+    .mt-1 {
+      margin-top: 0.5rem;
+    }
+
+    .mt-2 {
+      margin-top: 1rem;
+    }
+
+    .mt-3 {
+      margin-top: 1.5rem;
+    }
+
+    .mt-4 {
+      margin-top: 2rem;
+    }
+
+    .mt-5 {
+      margin-top: 2.5rem;
+    }
+  </style>
 </head>
 
 <body>
 
-  <div class="row">
+  <div class="row mt-5">
     <div class="col s3"></div>
     <div class="col s6">
       <div id="ytplayer"></div>
-      <form class="col s12">
-        <div class="row">
-          <div class="input-field col s6">
-            <input placeholder="Place the video id here" id="first_name" type="text" class="validate">
-            <label for="first_name">Change Video</label>
+      <div class="mt-5 col s6">
+        <form>
+          <div class="row">
+            <div class="input-field col s6">
+              <input placeholder="Place the video id here" id="video-id" type="text" class="validate">
+              <label for="url">Change Video</label>
+              <button id="id-btn" class="btn waves-effect waves-light" type="submit" name="action">Submit
+                <i class="material-icons right">send</i>
+              </button>
+            </div>
           </div>
-          <button class="btn waves-effect waves-light col s6" type="submit" name="action">Submit
-            <i class="material-icons right">send</i>
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
+
     </div>
+    <div class="col s3"></div>
   </div>
-  <div class="col s3"></div>
-
-
-  <script>
-    // FIREBASE
-    let caughtUp = true;
-    document.addEventListener("DOMContentLoaded", event => {
-      const app = firebase.app();
-
-      const db = firebase.firestore();
-
-      const video = db.collection('rooms').doc('room');
-
-      video.onSnapshot(doc => {
-        const data = doc.data();
-        // if (data.state === -1) {
-        //   player.stopVideo();
-        // }
-        if (data.state === 1) {
-          player.playVideo();
-        }
-        if (data.state === 2) {
-          player.pauseVideo();
-        }
-
-      })
-    });
 
 
 
-    // Load the IFrame Player API code asynchronously.
-    var tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/player_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    // Replace the 'ytplayer' element with an <iframe> and
-    // YouTube player after the API code downloads.
-    var player;
-    function onYouTubePlayerAPIReady() {
-      player = new YT.Player('ytplayer', {
-        height: '360',
-        width: '640',
-        videoId: 'M7lc1UVf-VE',
-        playerVars: { 'autoplay': 1 },
-        events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange
-        }
-      });
-    }
-
-    function onPlayerReady(event) {
-      const db = firebase.firestore();
-      const video = db.collection("rooms").doc("room");
-
-      video.get()
-        .then(doc => {
-          const data = doc.data();
-          video.update({ numWatcher: data.numWatcher + 1 });
-        });
-    }
-
-    // 5. The API calls this function when the player's state changes.
-    //    The function indicates that when playing a video (state=1),
-    //    the player should play for six seconds and then stop.
-    function onPlayerStateChange(event) {
-      if (event.data !== 3) {
-        const db = firebase.firestore();
-        const video = db.collection("rooms").doc("room");
-        if (event.data === 2) {
-          setTimeout(function () {
-            if (event.target.getPlayerState() === 2) {
-              console.log("PAUSING")
-              video.update({ state: event.data });
-            }
-            else {
-              console.log("SEEKING");
-              video.update({ timeStamp: player.getCurrentTime() });
-            }
-          }, 500)
-        }
-        else {
-          video.update({ state: event.data });
-        }
-      }
-    }
-
-    window.onbeforeunload = function (event) {
-      event.preventDefault();
-      const db = firebase.firestore();
-      const video = db.collection("rooms").doc("room");
-
-      video.get()
-        .then(doc => {
-          const data = doc.data();
-          video.update({ numWatcher: data.numWatcher - 1 });
-        });
-
-      return "";
-    }
-
-
-    window.setInterval(function () {
-      const db = firebase.firestore();
-      const video = db.collection("rooms").doc("room");
-      video.get()
-        .then(doc => {
-          const data = doc.data();
-          if (data.timeStamp - player.getCurrentTime() > 5 || data.timeStamp - player.getCurrentTime() < -5) {
-            player.seekTo(data.timeStamp, true);
-          }
-          else {
-            video.update({ timeStamp: player.getCurrentTime() });
-          }
-        });
-
-    }, 2000);
-
+  <script src="./script.js">
   </script>
 </body>
 
