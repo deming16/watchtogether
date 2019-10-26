@@ -13,13 +13,39 @@
   <!-- initialize the SDK after all desired features are loaded -->
   <script defer src="/__/firebase/init.js"></script>
 
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+  <!-- Compiled and minified JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
 </head>
 
 <body>
-  <div id="ytplayer"></div>
+
+  <div class="row">
+    <div class="col s3"></div>
+    <div class="col s6">
+      <div id="ytplayer"></div>
+      <form class="col s12">
+        <div class="row">
+          <div class="input-field col s6">
+            <input placeholder="Place the video id here" id="first_name" type="text" class="validate">
+            <label for="first_name">Change Video</label>
+          </div>
+          <button class="btn waves-effect waves-light col s6" type="submit" name="action">Submit
+            <i class="material-icons right">send</i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col s3"></div>
+
 
   <script>
     // FIREBASE
+    let caughtUp = true;
     document.addEventListener("DOMContentLoaded", event => {
       const app = firebase.app();
 
@@ -29,20 +55,20 @@
 
       video.onSnapshot(doc => {
         const data = doc.data();
-        if (data.state) {
-          player.stopVideo();
-        }
+        // if (data.state === -1) {
+        //   player.stopVideo();
+        // }
         if (data.state === 1) {
           player.playVideo();
         }
         if (data.state === 2) {
           player.pauseVideo();
         }
-        if (data.state === "seek") {
 
-        }
       })
     });
+
+
 
     // Load the IFrame Player API code asynchronously.
     var tag = document.createElement('script');
@@ -58,23 +84,80 @@
         height: '360',
         width: '640',
         videoId: 'M7lc1UVf-VE',
+        playerVars: { 'autoplay': 1 },
         events: {
           'onReady': onPlayerReady,
           'onStateChange': onPlayerStateChange
         }
       });
     }
+
     function onPlayerReady(event) {
-      player.stopVideo();
+      const db = firebase.firestore();
+      const video = db.collection("rooms").doc("room");
+
+      video.get()
+        .then(doc => {
+          const data = doc.data();
+          video.update({ numWatcher: data.numWatcher + 1 });
+        });
     }
+
     // 5. The API calls this function when the player's state changes.
     //    The function indicates that when playing a video (state=1),
     //    the player should play for six seconds and then stop.
     function onPlayerStateChange(event) {
+      if (event.data !== 3) {
+        const db = firebase.firestore();
+        const video = db.collection("rooms").doc("room");
+        if (event.data === 2) {
+          setTimeout(function () {
+            if (event.target.getPlayerState() === 2) {
+              console.log("PAUSING")
+              video.update({ state: event.data });
+            }
+            else {
+              console.log("SEEKING");
+              video.update({ timeStamp: player.getCurrentTime() });
+            }
+          }, 500)
+        }
+        else {
+          video.update({ state: event.data });
+        }
+      }
+    }
+
+    window.onbeforeunload = function (event) {
+      event.preventDefault();
       const db = firebase.firestore();
       const video = db.collection("rooms").doc("room");
-      video.update({ state: event.data });
+
+      video.get()
+        .then(doc => {
+          const data = doc.data();
+          video.update({ numWatcher: data.numWatcher - 1 });
+        });
+
+      return "";
     }
+
+
+    window.setInterval(function () {
+      const db = firebase.firestore();
+      const video = db.collection("rooms").doc("room");
+      video.get()
+        .then(doc => {
+          const data = doc.data();
+          if (data.timeStamp - player.getCurrentTime() > 5 || data.timeStamp - player.getCurrentTime() < -5) {
+            player.seekTo(data.timeStamp, true);
+          }
+          else {
+            video.update({ timeStamp: player.getCurrentTime() });
+          }
+        });
+
+    }, 2000);
 
   </script>
 </body>
