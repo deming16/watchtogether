@@ -9,7 +9,7 @@
   <!-- update the version number as needed -->
   <script defer src="/__/firebase/7.2.2/firebase-app.js"></script>
   <!-- include only the Firebase features as you need -->
-  <script defer src="/__/firebase/7.2.2/firebase-database.js"></script>
+  <script defer src="/__/firebase/7.2.2/firebase-firestore.js"></script>
   <!-- initialize the SDK after all desired features are loaded -->
   <script defer src="/__/firebase/init.js"></script>
 
@@ -19,6 +19,31 @@
   <div id="ytplayer"></div>
 
   <script>
+    // FIREBASE
+    document.addEventListener("DOMContentLoaded", event => {
+      const app = firebase.app();
+
+      const db = firebase.firestore();
+
+      const video = db.collection('rooms').doc('room');
+
+      video.onSnapshot(doc => {
+        const data = doc.data();
+        if (data.state) {
+          player.stopVideo();
+        }
+        if (data.state === 1) {
+          player.playVideo();
+        }
+        if (data.state === 2) {
+          player.pauseVideo();
+        }
+        if (data.state === "seek") {
+
+        }
+      })
+    });
+
     // Load the IFrame Player API code asynchronously.
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/player_api";
@@ -39,39 +64,18 @@
         }
       });
     }
-
-    // 4. The API will call this function when the video player is ready.
     function onPlayerReady(event) {
-      event.target.playVideo();
+      player.stopVideo();
     }
-
     // 5. The API calls this function when the player's state changes.
     //    The function indicates that when playing a video (state=1),
     //    the player should play for six seconds and then stop.
-    var done = false;
     function onPlayerStateChange(event) {
-      if (event.data == YT.PlayerState.PLAYING && !done) {
-        setTimeout(stopVideo, 6000);
-        done = true;
-      }
-    }
-    function stopVideo() {
-      player.stopVideo();
-    }
-
-    // FIREBASE
-    document.addEventListener("DOMContentLoaded", event => {
-      const app = firebase.app();
-
       const db = firebase.firestore();
+      const video = db.collection("rooms").doc("room");
+      video.update({ state: event.data });
+    }
 
-      const video = db.collection('rooms').doc('room');
-
-      video.snap()
-        .then(doc => {
-
-        })
-    })
   </script>
 </body>
 
